@@ -1,7 +1,29 @@
 import random
 
 class AIPlayer:
+    """
+    Représente un joueur IA dans le jeu de bataille navale.
+    
+    Cette classe implémente la logique de l'IA pour le placement des navires
+    et la stratégie de tir. Elle peut fonctionner avec différents niveaux
+    de difficulté qui affectent sa précision et sa stratégie.
+    
+    Attributes:
+        difficulty (str): Niveau de difficulté de l'IA ('easy', 'medium', ou 'hard')
+        board_size (int): Taille du plateau de jeu
+        shots (list): Liste des tirs déjà effectués
+        last_hit (tuple): Coordonnées du dernier tir réussi (x, y)
+        hunt_mode (bool): True si l'IA est en mode "chasse" (a touché un navire)
+        potential_targets (list): Liste des cibles potentielles en mode chasse
+    """
+    
     def __init__(self, difficulty="moyen"):
+        """
+        Initialise un joueur IA avec un niveau de difficulté spécifié.
+        
+        Args:
+            difficulty (str): Niveau de difficulté ('easy', 'medium', ou 'hard')
+        """
         self.difficulty = difficulty
         self.last_hit = None
         self.potential_targets = []
@@ -9,6 +31,18 @@ class AIPlayer:
         self.board_size = 10
     
     def get_move(self, player_board):
+        """
+        Détermine la prochaine case à cibler.
+        
+        Utilise différentes stratégies selon le niveau de difficulté
+        et si un navire a été touché précédemment.
+        
+        Args:
+            player_board (Board): Le plateau du joueur
+
+        Returns:
+            tuple: Coordonnées du tir (x, y)
+        """
         if self.difficulty == "facile":
             return self._get_random_move()
         elif self.difficulty == "moyen":
@@ -17,7 +51,12 @@ class AIPlayer:
             return self._get_hard_move(player_board)
     
     def _get_random_move(self):
-        """Stratégie facile : tir complètement aléatoire"""
+        """
+        Stratégie facile : tir complètement aléatoire.
+        
+        Returns:
+            tuple: Coordonnées du tir (x, y)
+        """
         while True:
             x = random.randint(0, self.board_size - 1)
             y = random.randint(0, self.board_size - 1)
@@ -26,7 +65,12 @@ class AIPlayer:
                 return x, y
     
     def _get_medium_move(self):
-        """Stratégie moyenne : tir aléatoire mais continue autour d'un hit"""
+        """
+        Stratégie moyenne : tir aléatoire mais continue autour d'un hit.
+        
+        Returns:
+            tuple: Coordonnées du tir (x, y)
+        """
         if self.last_hit and self.potential_targets:
             # Continuer à tirer autour du dernier hit
             x, y = self.potential_targets.pop()
@@ -36,7 +80,15 @@ class AIPlayer:
         return self._get_random_move()
     
     def _get_hard_move(self, player_board):
-        """Stratégie difficile : tir intelligent avec mémoire et probabilités"""
+        """
+        Stratégie difficile : tir intelligent avec mémoire et probabilités.
+        
+        Args:
+            player_board (Board): Le plateau du joueur
+
+        Returns:
+            tuple: Coordonnées du tir (x, y)
+        """
         if self.last_hit and self.potential_targets:
             # Utiliser la connaissance des hits précédents
             best_target = max(self.potential_targets, 
@@ -59,7 +111,16 @@ class AIPlayer:
         return best_position
     
     def _calculate_probability(self, pos, player_board):
-        """Calcule la probabilité qu'un bateau soit à une position donnée"""
+        """
+        Calcule la probabilité qu'un bateau soit à une position donnée.
+        
+        Args:
+            pos (tuple): Coordonnées de la position (x, y)
+            player_board (Board): Le plateau du joueur
+
+        Returns:
+            int: La probabilité qu'un bateau soit à cette position
+        """
         x, y = pos
         probability = 0
         
@@ -81,7 +142,17 @@ class AIPlayer:
         return probability
     
     def _can_place_ship_at(self, pos, ship_size, player_board):
-        """Vérifie si un bateau de taille donnée peut être placé à la position"""
+        """
+        Vérifie si un bateau de taille donnée peut être placé à la position.
+        
+        Args:
+            pos (tuple): Coordonnées de la position (x, y)
+            ship_size (int): Taille du bateau
+            player_board (Board): Le plateau du joueur
+
+        Returns:
+            bool: True si le bateau peut être placé, False sinon
+        """
         x, y = pos
         
         # Vérifier horizontalement
@@ -107,7 +178,16 @@ class AIPlayer:
         return False
     
     def notify_hit(self, x, y, is_hit):
-        """Notifie l'IA du résultat du tir"""
+        """
+        Notifie l'IA du résultat du tir.
+        
+        Met à jour la stratégie de l'IA en fonction du résultat du tir.
+        
+        Args:
+            x (int): Coordonnée x du tir
+            y (int): Coordonnée y du tir
+            is_hit (bool): True si le tir a touché un navire, False sinon
+        """
         if is_hit:
             self.last_hit = (x, y)
             # Ajouter les cases adjacentes comme cibles potentielles

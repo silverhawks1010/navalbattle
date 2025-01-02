@@ -3,7 +3,25 @@ from tkinter import ttk
 from .game_window import GameWindow
 
 class MainMenu:
+    """
+    Représente le menu principal du jeu de bataille navale.
+    
+    Cette classe gère l'interface du menu principal, permettant au joueur
+    de démarrer une nouvelle partie, choisir la difficulté, et quitter le jeu.
+    
+    Attributes:
+        master (tk.Tk): La fenêtre principale de l'application
+        difficulty (str): Le niveau de difficulté choisi
+        main_frame (tk.Frame): Le conteneur principal pour les widgets du menu
+    """
+    
     def __init__(self, master):
+        """
+        Initialise le menu principal.
+        
+        Args:
+            master (tk.Tk): La fenêtre principale de l'application
+        """
         self.master = master
         self.master.title("Bataille Navale - Menu Principal")
         
@@ -85,6 +103,11 @@ class MainMenu:
         self.quit_button.pack(pady=10)
     
     def start_game(self):
+        """
+        Démarre une nouvelle partie avec la difficulté choisie.
+        
+        Ferme le menu principal et ouvre la fenêtre de jeu.
+        """
         # Fermer le menu
         self.main_frame.destroy()
         
