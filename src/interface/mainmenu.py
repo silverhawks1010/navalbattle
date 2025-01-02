@@ -1,47 +1,92 @@
 import tkinter as tk
-from tkinter import messagebox
-import os
-from PIL import Image, ImageTk
+from tkinter import ttk
+from .game_window import GameWindow
 
 class MainMenu:
     def __init__(self, master):
         self.master = master
-        master.title("Menu Principal")
-        master.attributes('-fullscreen', True)  # Set fullscreen
-
-        # Load and resize background image
-        image_path = os.path.abspath(os.path.join(os.getcwd(), 'assets', 'materials', 'main_menu.png'))
-        image = Image.open(image_path)
-        self.background_image = ImageTk.PhotoImage(image.resize((master.winfo_screenwidth(), master.winfo_screenheight()), Image.LANCZOS))
-        self.background_label = tk.Label(master, image=self.background_image)
-        self.background_label.place(relwidth=1, relheight=1)
-
-        # Load and resize logo image
-        logo_path = os.path.abspath(os.path.join(os.getcwd(), 'assets', 'materials', 'logo.png'))
-        logo_image = Image.open(logo_path)
-        self.logo_image = ImageTk.PhotoImage(logo_image.resize((150, 200), Image.LANCZOS))  # Resize logo to be taller
-        self.logo_label = tk.Label(master, image=self.logo_image, bg='white') 
-        self.logo_label.place(relx=0.5, rely=0.1, anchor=tk.CENTER)  # Center logo at the top
-
-        # Center buttons
-        button_frame = tk.Frame(master)
-        button_frame.place(relx=0.5, rely=0.5, anchor=tk.CENTER)  # Center buttons on the screen
-        self.play_button = tk.Button(button_frame, text="Jouer", command=self.play)
-        self.play_button.pack(pady=5)
-
-        self.options_button = tk.Button(button_frame, text="Options", command=self.options)
-        self.options_button.pack(pady=5)
-
-        self.quit_button = tk.Button(button_frame, text="Quitter", command=master.quit)
-        self.quit_button.pack(pady=5)
-
-    def play(self):
-        messagebox.showinfo("Jouer", "Vous avez cliqué sur Jouer!")
-
-    def options(self):
-        messagebox.showinfo("Options", "Vous avez cliqué sur Options!")
-
-if __name__ == '__main__':
-    root = tk.Tk()
-    main_menu = MainMenu(root)
-    root.mainloop()
+        self.master.title("Bataille Navale - Menu Principal")
+        
+        # Centrer la fenêtre
+        window_width = 400
+        window_height = 300
+        screen_width = master.winfo_screenwidth()
+        screen_height = master.winfo_screenheight()
+        center_x = int(screen_width/2 - window_width/2)
+        center_y = int(screen_height/2 - window_height/2)
+        self.master.geometry(f'{window_width}x{window_height}+{center_x}+{center_y}')
+        
+        # Frame principale
+        self.main_frame = tk.Frame(self.master)
+        self.main_frame.pack(expand=True)
+        
+        # Titre
+        self.title_label = tk.Label(
+            self.main_frame,
+            text="Bataille Navale",
+            font=('Arial', 24, 'bold'),
+            pady=20
+        )
+        self.title_label.pack()
+        
+        # Sélecteur de difficulté
+        self.difficulty_frame = tk.Frame(self.main_frame)
+        self.difficulty_frame.pack(pady=20)
+        
+        self.difficulty_label = tk.Label(
+            self.difficulty_frame,
+            text="Difficulté :",
+            font=('Arial', 12)
+        )
+        self.difficulty_label.pack()
+        
+        self.difficulty = tk.StringVar(value="moyen")
+        
+        difficulties = [
+            ("Facile", "facile"),
+            ("Moyen", "moyen"),
+            ("Difficile", "difficile")
+        ]
+        
+        self.difficulty_buttons = []
+        for text, value in difficulties:
+            rb = ttk.Radiobutton(
+                self.difficulty_frame,
+                text=text,
+                value=value,
+                variable=self.difficulty
+            )
+            rb.pack(pady=5)
+            self.difficulty_buttons.append(rb)
+        
+        # Bouton Jouer
+        self.play_button = tk.Button(
+            self.main_frame,
+            text="JOUER",
+            command=self.start_game,
+            font=('Arial', 14, 'bold'),
+            width=20,
+            height=2,
+            bg='navy',
+            fg='white',
+            activebackground='darkblue',
+            activeforeground='white'
+        )
+        self.play_button.pack(pady=20)
+        
+        # Bouton Quitter
+        self.quit_button = tk.Button(
+            self.main_frame,
+            text="Quitter",
+            command=self.master.quit,
+            font=('Arial', 12),
+            width=10
+        )
+        self.quit_button.pack(pady=10)
+    
+    def start_game(self):
+        # Fermer le menu
+        self.main_frame.destroy()
+        
+        # Créer la fenêtre de jeu avec la difficulté sélectionnée
+        game_window = GameWindow(self.master, self.difficulty.get())
