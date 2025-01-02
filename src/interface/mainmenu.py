@@ -1,115 +1,222 @@
 import tkinter as tk
 from tkinter import ttk
 from .game_window import GameWindow
+from ..game.game_stats import GameStats
 
 class MainMenu:
     """
     Représente le menu principal du jeu de bataille navale.
     
     Cette classe gère l'interface du menu principal, permettant au joueur
-    de démarrer une nouvelle partie, choisir la difficulté, et quitter le jeu.
-    
-    Attributes:
-        master (tk.Tk): La fenêtre principale de l'application
-        difficulty (str): Le niveau de difficulté choisi
-        main_frame (tk.Frame): Le conteneur principal pour les widgets du menu
+    de démarrer une nouvelle partie, voir les statistiques, et quitter le jeu.
     """
     
     def __init__(self, master):
-        """
-        Initialise le menu principal.
-        
-        Args:
-            master (tk.Tk): La fenêtre principale de l'application
-        """
+        """Initialise le menu principal"""
         self.master = master
         self.master.title("Bataille Navale - Menu Principal")
+        self.difficulty = "moyen"
+        self.game_stats = GameStats()
         
-        # Centrer la fenêtre
-        window_width = 400
-        window_height = 300
-        screen_width = master.winfo_screenwidth()
-        screen_height = master.winfo_screenheight()
-        center_x = int(screen_width/2 - window_width/2)
-        center_y = int(screen_height/2 - window_height/2)
-        self.master.geometry(f'{window_width}x{window_height}+{center_x}+{center_y}')
-        
-        # Frame principale
+        # Configuration de la fenêtre principale
+        self.master.geometry("800x600")
+        self.setup_ui()
+    
+    def setup_ui(self):
+        """Configure l'interface utilisateur du menu principal"""
+        # Conteneur principal avec deux colonnes
         self.main_frame = tk.Frame(self.master)
-        self.main_frame.pack(expand=True)
+        self.main_frame.pack(expand=True, fill="both", padx=20, pady=20)
+        
+        # Colonne gauche (contrôles)
+        left_frame = tk.Frame(self.main_frame)
+        left_frame.pack(side="left", fill="both", expand=True, padx=(0, 10))
         
         # Titre
-        self.title_label = tk.Label(
-            self.main_frame,
-            text="Bataille Navale",
-            font=('Arial', 24, 'bold'),
-            pady=20
+        title = tk.Label(
+            left_frame,
+            text="BATAILLE NAVALE",
+            font=("Arial", 24, "bold")
         )
-        self.title_label.pack()
+        title.pack(pady=20)
         
-        # Sélecteur de difficulté
-        self.difficulty_frame = tk.Frame(self.main_frame)
-        self.difficulty_frame.pack(pady=20)
+        # Frame pour la sélection de difficulté
+        difficulty_frame = tk.Frame(left_frame)
+        difficulty_frame.pack(pady=10)
         
-        self.difficulty_label = tk.Label(
-            self.difficulty_frame,
-            text="Difficulté :",
-            font=('Arial', 12)
+        tk.Label(
+            difficulty_frame,
+            text="Choisissez la difficulté :",
+            font=("Arial", 12)
+        ).pack()
+        
+        # Liste déroulante pour la difficulté
+        self.difficulty_var = tk.StringVar(value="moyen")
+        difficulty_combo = ttk.Combobox(
+            difficulty_frame,
+            textvariable=self.difficulty_var,
+            values=["facile", "moyen", "difficile"],
+            state="readonly",
+            width=15
         )
-        self.difficulty_label.pack()
+        difficulty_combo.pack(pady=5)
+        difficulty_combo.bind('<<ComboboxSelected>>', lambda e: self.set_difficulty(self.difficulty_var.get()))
         
-        self.difficulty = tk.StringVar(value="moyen")
-        
-        difficulties = [
-            ("Facile", "facile"),
-            ("Moyen", "moyen"),
-            ("Difficile", "difficile")
-        ]
-        
-        self.difficulty_buttons = []
-        for text, value in difficulties:
-            rb = ttk.Radiobutton(
-                self.difficulty_frame,
-                text=text,
-                value=value,
-                variable=self.difficulty
-            )
-            rb.pack(pady=5)
-            self.difficulty_buttons.append(rb)
-        
-        # Bouton Jouer
-        self.play_button = tk.Button(
-            self.main_frame,
-            text="JOUER",
+        # Bouton démarrer
+        start_button = tk.Button(
+            left_frame,
+            text="Démarrer la partie",
             command=self.start_game,
-            font=('Arial', 14, 'bold'),
-            width=20,
-            height=2,
-            bg='navy',
-            fg='white',
-            activebackground='darkblue',
-            activeforeground='white'
+            font=("Arial", 14),
+            width=15
         )
-        self.play_button.pack(pady=20)
+        start_button.pack(pady=20)
         
-        # Bouton Quitter
-        self.quit_button = tk.Button(
-            self.main_frame,
+        # Bouton quitter
+        quit_button = tk.Button(
+            left_frame,
             text="Quitter",
             command=self.master.quit,
-            font=('Arial', 12),
+            font=("Arial", 12),
             width=10
         )
-        self.quit_button.pack(pady=10)
+        quit_button.pack(pady=10)
+        
+        # Colonne droite (statistiques)
+        right_frame = tk.Frame(self.main_frame)
+        right_frame.pack(side="right", fill="both", expand=True, padx=(10, 0))
+        
+        # Titre des statistiques
+        tk.Label(
+            right_frame,
+            text="Statistiques",
+            font=("Arial", 18, "bold")
+        ).pack(pady=(0, 10))
+        
+        # Tableau des statistiques
+        self.stats_tree = ttk.Treeview(
+            right_frame,
+            columns=("difficulty", "result", "duration", "accuracy"),
+            show="headings",
+            height=10
+        )
+        
+        # Configuration des colonnes
+        self.stats_tree.heading("difficulty", text="Difficulté")
+        self.stats_tree.heading("result", text="Résultat")
+        self.stats_tree.heading("duration", text="Durée")
+        self.stats_tree.heading("accuracy", text="Précision")
+        
+        self.stats_tree.column("difficulty", width=100)
+        self.stats_tree.column("result", width=100)
+        self.stats_tree.column("duration", width=100)
+        self.stats_tree.column("accuracy", width=100)
+        
+        # Scrollbar pour le tableau
+        scrollbar = ttk.Scrollbar(right_frame, orient="vertical", command=self.stats_tree.yview)
+        self.stats_tree.configure(yscrollcommand=scrollbar.set)
+        
+        self.stats_tree.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
+        
+        # Bouton pour plus de détails
+        details_button = tk.Button(
+            right_frame,
+            text="Plus de détails",
+            command=self.show_detailed_stats,
+            font=("Arial", 10)
+        )
+        details_button.pack(pady=10)
+        
+        # Mettre à jour les statistiques
+        self.update_stats_table()
+    
+    def update_stats_table(self):
+        """Met à jour le tableau des statistiques"""
+        # Effacer le tableau
+        for item in self.stats_tree.get_children():
+            self.stats_tree.delete(item)
+        
+        # Charger les statistiques
+        stats = self.game_stats.stats_history
+        
+        # Ajouter les 10 dernières parties
+        for game in reversed(stats[-10:]):
+            duration = f"{game['duration'] // 60}:{game['duration'] % 60:02d}"
+            self.stats_tree.insert("", "end", values=(
+                game['difficulty'],
+                "Victoire" if game['result'] == 'victory' else "Défaite",
+                duration,
+                f"{game['player_accuracy']}%"
+            ))
+    
+    def show_detailed_stats(self):
+        """Affiche une fenêtre avec les statistiques détaillées"""
+        details_window = tk.Toplevel(self.master)
+        details_window.title("Statistiques détaillées")
+        details_window.geometry("600x800")
+        
+        # Titre
+        tk.Label(
+            details_window,
+            text="Statistiques détaillées",
+            font=("Arial", 16, "bold")
+        ).pack(pady=10)
+        
+        # Statistiques globales
+        stats_summary = self.game_stats.get_stats_summary()
+        if stats_summary:
+            # Frame pour les stats globales
+            global_frame = tk.LabelFrame(details_window, text="Statistiques globales", pady=10, padx=10)
+            global_frame.pack(fill="x", padx=20, pady=10)
+            
+            global_stats = [
+                ("Parties jouées", stats_summary['total_games']),
+                ("Victoires", stats_summary['victories']),
+                ("Taux de victoire", f"{round(stats_summary['victories'] / stats_summary['total_games'] * 100, 2)}%")
+            ]
+            
+            for label, value in global_stats:
+                row = tk.Frame(global_frame)
+                row.pack(fill="x", pady=2)
+                tk.Label(row, text=label + ":", anchor="w").pack(side="left")
+                tk.Label(row, text=str(value), anchor="e").pack(side="right")
+            
+            # Stats par difficulté
+            for difficulty, diff_stats in stats_summary['stats_by_difficulty'].items():
+                diff_frame = tk.LabelFrame(
+                    details_window,
+                    text=f"Statistiques - {difficulty.capitalize()}",
+                    pady=10,
+                    padx=10
+                )
+                diff_frame.pack(fill="x", padx=20, pady=10)
+                
+                diff_details = [
+                    ("Parties jouées", diff_stats['total_games']),
+                    ("Victoires", diff_stats['victories']),
+                    ("Taux de victoire", f"{diff_stats['win_rate']}%"),
+                    ("Durée moyenne", f"{int(diff_stats['avg_duration'] // 60)}:{int(diff_stats['avg_duration'] % 60):02d}")
+                ]
+                
+                for label, value in diff_details:
+                    row = tk.Frame(diff_frame)
+                    row.pack(fill="x", pady=2)
+                    tk.Label(row, text=label + ":", anchor="w").pack(side="left")
+                    tk.Label(row, text=str(value), anchor="e").pack(side="right")
+        
+        # Bouton fermer
+        tk.Button(
+            details_window,
+            text="Fermer",
+            command=details_window.destroy
+        ).pack(pady=20)
+    
+    def set_difficulty(self, difficulty):
+        """Définit le niveau de difficulté"""
+        self.difficulty = difficulty
     
     def start_game(self):
-        """
-        Démarre une nouvelle partie avec la difficulté choisie.
-        
-        Ferme le menu principal et ouvre la fenêtre de jeu.
-        """
-        # Fermer le menu
+        """Démarre une nouvelle partie"""
         self.main_frame.destroy()
-        
-        # Créer la fenêtre de jeu avec la difficulté sélectionnée
-        game_window = GameWindow(self.master, self.difficulty.get())
+        GameWindow(self.master, self.difficulty)
