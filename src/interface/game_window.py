@@ -4,6 +4,7 @@ from ..game.ship import Ship
 from ..game.ai_player import AIPlayer
 import random
 import time
+from ..game.game_stats import GameStats
 
 class GameWindow:
     def __init__(self, master, difficulty="moyen"):
@@ -12,6 +13,7 @@ class GameWindow:
         self.cell_size = 40
         self.board_size = 10
         self.difficulty = difficulty
+        self.game_stats = GameStats()
         
         # Création des plateaux
         self.player_board = Board()
@@ -577,17 +579,105 @@ class GameWindow:
         MainMenu(self.master)
 
     def show_replay_button(self):
-        """Affiche le bouton rejouer et arrête le timer"""
-        self.validate_button.pack_forget()  # Cacher le bouton valider s'il est encore visible
-        self.replay_button.pack(pady=5)  # Afficher le bouton rejouer
+        """Affiche le bouton rejouer et sauvegarde les statistiques"""
+        self.validate_button.pack_forget()
+        self.replay_button.pack(pady=5)
         
-        # Sauvegarder le temps final
+        # Calculer le temps final
         if self.start_time is not None:
             self.game_time = int(time.time() - self.start_time)
             minutes = self.game_time // 60
             seconds = self.game_time % 60
             self.timer_label.config(text=f"Temps final: {minutes:02d}:{seconds:02d}")
-
+        
+        # Sauvegarder les statistiques
+        stats = {
+            'difficulty': self.difficulty,
+            'duration': self.game_time,
+            'result': 'victory' if self.ai_board.all_ships_sunk() else 'defeat',
+            'player_shots': self.player_hits + self.player_misses,
+            'ai_shots': self.ai_hits + self.ai_misses,
+            'player_hits': self.player_hits,
+            'ai_hits': self.ai_hits,
+            'player_accuracy': round(self.player_hits / (self.player_hits + self.player_misses) * 100, 2) if (self.player_hits + self.player_misses) > 0 else 0,
+            'ai_accuracy': round(self.ai_hits / (self.ai_hits + self.ai_misses) * 100, 2) if (self.ai_hits + self.ai_misses) > 0 else 0
+        }
+        self.game_stats.save_game_stats(stats)
+        
+        # Afficher un résumé des statistiques
+        self.show_game_summary(stats)
+    
+    def show_game_summary(self, stats):
+        """Affiche une fenêtre avec le résumé de la partie"""
+        summary_window = tk.Toplevel(self.master)
+        summary_window.title("Résumé de la partie")
+        summary_window.geometry("400x500")
+        
+        # Titre
+        tk.Label(
+            summary_window,
+            text="Résumé de la partie",
+            font=("Arial", 16, "bold")
+        ).pack(pady=10)
+        
+        # Résultat
+        result_text = "Victoire !" if stats['result'] == 'victory' else "Défaite..."
+        tk.Label(
+            summary_window,
+            text=result_text,
+            font=("Arial", 14),
+            fg="green" if stats['result'] == 'victory' else "red"
+        ).pack(pady=5)
+        
+        # Statistiques détaillées
+        details_frame = tk.Frame(summary_window)
+        details_frame.pack(pady=10, padx=20, fill="x")
+        
+        details = [
+            ("Difficulté", stats['difficulty']),
+            ("Durée", f"{stats['duration'] // 60}min {stats['duration'] % 60}s"),
+            ("Tirs du joueur", stats['player_shots']),
+            ("Tirs réussis", stats['player_hits']),
+            ("Précision", f"{stats['player_accuracy']}%"),
+            ("Tirs de l'IA", stats['ai_shots']),
+            ("Tirs réussis IA", stats['ai_hits']),
+            ("Précision IA", f"{stats['ai_accuracy']}%")
+        ]
+        
+        for label, value in details:
+            row = tk.Frame(details_frame)
+            row.pack(fill="x", pady=2)
+            tk.Label(row, text=label + ":", anchor="w").pack(side="left")
+            tk.Label(row, text=str(value), anchor="e").pack(side="right")
+        
+        # Statistiques globales
+        tk.Label(
+            summary_window,
+            text="\nStatistiques globales",
+            font=("Arial", 12, "bold")
+        ).pack(pady=10)
+        
+        stats_summary = self.game_stats.get_stats_summary()
+        if stats_summary:
+            global_stats = [
+                ("Parties jouées", stats_summary['total_games']),
+                ("Victoires", stats_summary['victories']),
+                ("Taux de victoire", f"{round(stats_summary['victories'] / stats_summary['total_games'] * 100, 2)}%")
+            ]
+            
+            for label, value in global_stats:
+                row = tk.Frame(summary_window)
+                row.pack(fill="x", pady=2, padx=20)
+                tk.Label(row, text=label + ":", anchor="w").pack(side="left")
+                tk.Label(row, text=str(value), anchor="e").pack(side="right")
+        
+        # Bouton fermer
+        tk.Button(
+            summary_window,
+            text="Fermer",
+            command=summary_window.destroy
+        ).pack(pady=20)
+    
     def restart_game(self):
         """Redémarre une nouvelle partie"""
         # Détruire le conteneur principal
